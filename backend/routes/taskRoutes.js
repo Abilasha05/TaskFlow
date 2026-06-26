@@ -1,31 +1,24 @@
 const express = require("express");
-
 const router = express.Router();
-
-let tasks = [
-  {
-    id: 1,
-    title: "Learn MERN",
-    status: "Pending",
-  },
-];
+const Task = require("../models/Task");
 
 // GET ALL TASKS
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
+  const tasks = await Task.find();
   res.json(tasks);
 });
 
 // ADD TASK
-router.post("/", (req, res) => {
-  const newTask = {
-  id: tasks.length + 1,
-  title: req.body.title,
-  priority: req.body.priority || "Medium",
-  dueDate: req.body.dueDate || "",
-  category: req.body.category || "Study",
-  status: "Pending",
-};
-  tasks.push(newTask);
+router.post("/", async (req, res) => {
+  const newTask = new Task({
+    title: req.body.title,
+    priority: req.body.priority,
+    dueDate: req.body.dueDate,
+    category: req.body.category,
+    status: "Pending",
+  });
+
+  await newTask.save();
 
   res.json({
     message: "Task Added Successfully",
@@ -34,18 +27,12 @@ router.post("/", (req, res) => {
 });
 
 // COMPLETE TASK
-router.put("/:id", (req, res) => {
-  const taskId = parseInt(req.params.id);
-
-  const task = tasks.find((task) => task.id === taskId);
-
-  if (!task) {
-    return res.status(404).json({
-      message: "Task Not Found",
-    });
-  }
-
-  task.status = "Completed";
+router.put("/:id", async (req, res) => {
+  const task = await Task.findByIdAndUpdate(
+    req.params.id,
+    { status: "Completed" },
+    { new: true }
+  );
 
   res.json({
     message: "Task Completed",
@@ -54,18 +41,12 @@ router.put("/:id", (req, res) => {
 });
 
 // EDIT TASK
-router.patch("/:id", (req, res) => {
-  const taskId = parseInt(req.params.id);
-
-  const task = tasks.find((task) => task.id === taskId);
-
-  if (!task) {
-    return res.status(404).json({
-      message: "Task Not Found",
-    });
-  }
-
-  task.title = req.body.title;
+router.patch("/:id", async (req, res) => {
+  const task = await Task.findByIdAndUpdate(
+    req.params.id,
+    { title: req.body.title },
+    { new: true }
+  );
 
   res.json({
     message: "Task Updated Successfully",
@@ -74,10 +55,8 @@ router.patch("/:id", (req, res) => {
 });
 
 // DELETE TASK
-router.delete("/:id", (req, res) => {
-  const taskId = parseInt(req.params.id);
-
-  tasks = tasks.filter((task) => task.id !== taskId);
+router.delete("/:id", async (req, res) => {
+  await Task.findByIdAndDelete(req.params.id);
 
   res.json({
     message: "Task Deleted Successfully",
